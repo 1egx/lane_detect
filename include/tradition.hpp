@@ -118,4 +118,10 @@ private:
     * @return false 
     */
     bool isDayTime(Mat source);
+
+    
+    double last_inference_time_ms_ = 0.0;
+public:
+    Mat Infer(Mat frame);
+    double GetLastInferenceTimeMs() {return last_inference_time_ms_;}
 };

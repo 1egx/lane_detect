@@ -12,12 +12,13 @@
 struct ProgramOptions {
     std::string video_path;
     std::string device = "GPU";
+    std::string method = "model";
 };
 
 
 void printUsage(const char* program_name) {
     std::cout << "Usage: " << program_name
-              << " <video_path> [--device <GPU|CPU>]\n"
+              << " <video_path> [--device <GPU|CPU>] [--method <model|tradition|both>]\n"
               << "       " << program_name << " --help" << std::endl;
 }
 
@@ -42,26 +43,30 @@ void parseArguments(int argc, char* argv[], ProgramOptions& options) {
             printUsage(argv[0]);
             exit(1);
         }
-
-        if (option != "--device") {
+        if(option == "--device") {
+            if (device_set) {
+                std::cerr << "Error: --device was specified more than once" << std::endl;
+                exit(1);
+            }
+            options.device = argv[index + 1];
+            if (options.device != "GPU" && options.device != "CPU") {
+                std::cerr << "Error: device must be 'GPU' or 'CPU'" << std::endl;
+                exit(1);
+            }
+            device_set = true;
+        } else if(option == "--method") {
+            options.method = std::string(argv[index + 1]);
+            if(options.method != "model" && options.method != "tradition" && options.method != "both") {
+                std::cerr << "Error: --method must be 'model' , 'tradition' or 'both' " << std::endl;
+                exit(1);
+            }
+        } else {
             std::cerr << "Error: unknown option " << option << std::endl;
             printUsage(argv[0]);
             exit(1);
         }
-        if (device_set) {
-            std::cerr << "Error: --device was specified more than once" << std::endl;
-            exit(1);
-        }
-
-        options.device = argv[index + 1];
-        if (options.device != "GPU" && options.device != "CPU") {
-            std::cerr << "Error: device must be 'GPU' or 'CPU'" << std::endl;
-            exit(1);
-        }
-        device_set = true;
     }
 
-    exit(0);
 }
 
 void model_print(const std::vector<std::vector<cv::Point>>& lanes,const cv::Mat frame,const double time) {
@@ -76,11 +81,16 @@ void model_print(const std::vector<std::vector<cv::Point>>& lanes,const cv::Mat 
                     0.9, cv::Scalar(0, 0, 0), 4, cv::LINE_AA);
         cv::putText(frame, timing_text, cv::Point(18, 38), cv::FONT_HERSHEY_SIMPLEX,
                     0.9, cv::Scalar(0, 255, 255), 2, cv::LINE_AA);
-        cv::imshow("Lane Detection", frame);
+        cv::imshow("Lane Detection - Model", frame);
 }
 
-void tradition_print() {
-    
+void tradition_print(const cv::Mat frame, const double time) {
+    const std::string timing_text = cv::format("Inference: %.2f ms", time);
+    cv::putText(frame, timing_text, cv::Point(18, 38), cv::FONT_HERSHEY_SIMPLEX,
+                0.9, cv::Scalar(0, 0, 0), 4, cv::LINE_AA);
+    cv::putText(frame, timing_text, cv::Point(18, 38), cv::FONT_HERSHEY_SIMPLEX,
+                0.9, cv::Scalar(0, 255, 255), 2, cv::LINE_AA);
+    cv::imshow("Lane Detection - Tradition", frame);
 }
 
 int main(int argc, char* argv[]) {
@@ -102,9 +112,15 @@ int main(int argc, char* argv[]) {
 
     cv::Mat frame;
     while (capture.read(frame)) {
-        const auto lanes = model.Infer(frame);
-        model_print(lanes, frame, model.GetLastInferenceTimeMs());
-        tradition_print();
+        if(options.method == "model" || options.method == "both") {
+            const cv::Mat model_frame = frame.clone();
+            const auto lanes = model.Infer(model_frame);
+            model_print(lanes, model_frame, model.GetLastInferenceTimeMs());
+        }
+        if(options.method == "tradition" || options.method == "both") {
+            const cv::Mat tradition_frame = frame.clone();
+            tradition_print(tradition.Infer(tradition_frame), tradition.GetLastInferenceTimeMs());
+        }
         const int key = cv::pollKey();
     }
 

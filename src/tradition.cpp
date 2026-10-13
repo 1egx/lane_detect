@@ -324,3 +324,29 @@ bool Tradition::isDayTime(Mat source) {
 
     return true;
 }
+
+Mat Tradition::Infer(Mat frame) {
+    const int64 start_tick = cv::getTickCount();
+    bool isDay = isDayTime(frame);
+
+        // Filter image 
+    Mat filteredIMG = filterColors(frame, isDay);
+
+    // Apply grayscale
+    Mat gray = applyGrayscale(filteredIMG);
+
+    // Apply Gaussian blur
+    Mat gBlur = applyGaussianBlur(gray);
+
+    // Find edges
+    Mat edges = applyCanny(gBlur);
+
+    // Create mask (Region of Interest)
+    Mat maskedIMG = RegionOfInterest(edges);
+
+    // Detect straight lines and draw the lanes if possible
+    std::vector<Vec4i> linesP = houghLines(maskedIMG, frame.clone(), false);
+    last_inference_time_ms_ =
+        (cv::getTickCount() - start_tick) * 1000.0 / cv::getTickFrequency();
+    return drawLanes(frame, linesP);
+}

@@ -2,3 +2,6 @@ builde
 verbose
 compile_
 compile_commands.json
+build
+videos/*
+models/*

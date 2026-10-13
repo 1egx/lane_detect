@@ -1,32 +1,32 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 cmake_minimum_required(VERSION 2.8.3)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) 
 project(twinlitenet_dnn)
 
 find_package(OpenCV 4.9.0)
 
-# Options
-# option(ENABLE_CUDA "Enable CUDA" OFF)
+option(ENABLE_CUDA "Enable CUDA" ON)
 
-# if(ENABLE_CUDA)
-#   message(STATUS "CUDA is enabled")
-#   add_definitions(-DENABLE_CUDA)
-# endif()
+if(ENABLE_CUDA)
+  message(STATUS "CUDA is enabled")
+  add_definitions(-DENABLE_CUDA)
+endif()
 
-add_definitions(-DENABLE_CUDA)
 
 set(HEADER_FILES
-  include/twinlitenet_dnn.hpp)
+  include/model.hpp
+  include/tradition.hpp
+  )
 set(SOURCE_FILES
   src/main.cpp
-  src/twinlitenet_dnn.cpp)
+  src/tradition.cpp
+  src/model.cpp)
 
-# General Includes
 include_directories(
   include
   ${OpenCV_INCLUDE_DIRS}
 )
 
-# CUDA Includes
 if(ENABLE_CUDA)
   find_package(CUDA REQUIRED)
   include_directories(

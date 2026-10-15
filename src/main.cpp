@@ -94,12 +94,11 @@ void tradition_print(const cv::Mat frame, const double time) {
 }
 
 int main(int argc, char* argv[]) {
-    //加载函数
+    
     ProgramOptions options;
     parseArguments(argc, argv, options);
 
-    //模型配置
-    UFLDNet model("models/curvelanes_res34.onnx", options.device == "GPU");
+    UFLDNet model("models/model.onnx", options.device == "GPU");
     std::cout << "Model Loaded (" << (model.IsUsingCuda() ? "GPU" : "CPU") << ")" << std::endl;
 
     cv::VideoCapture capture(options.video_path);
